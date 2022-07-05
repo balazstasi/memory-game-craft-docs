@@ -1,10 +1,12 @@
 /** @jsxImportSource @emotion/react */
 import { Dispatch, Fragment, SetStateAction, useEffect, useState } from "react";
-import { Card } from "../components/Card";
-import { ElapsedTime } from "../components/ElapsedTime";
-import { Flex } from "../components/Flex";
-import { GameOverModal } from "../components/GameOverModal";
-import { ScoreBoard } from "../components/ScoreBoard";
+import {
+  GameOverModal,
+  ScoreBoard,
+  ElapsedTime,
+  Flex,
+  Card,
+} from "../components";
 import { useMemoryGame } from "../hooks/useMemoryGame";
 import { useTimer } from "../hooks/useTimer";
 import { FrogImage } from "../types";
