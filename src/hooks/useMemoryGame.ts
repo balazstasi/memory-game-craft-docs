@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { FrogImage } from "../types";
 import { calculateScoreFromMoves } from "../utils";
 import { useDeepCompareEffect } from "./useDeepCompareEffect";
