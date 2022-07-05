@@ -1,56 +1,13 @@
 /** @jsxImportSource @emotion/react */
-import React, {
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  useEffect,
-  useState,
-} from "react";
-import tw from "twin.macro";
-import ygoback from "../assets/yugioh-back.png";
+import { Dispatch, Fragment, SetStateAction, useEffect, useState } from "react";
+import { Card } from "../components/Card";
+import { ElapsedTime } from "../components/ElapsedTime";
+import { Flex } from "../components/Flex";
+import { GameOverModal } from "../components/GameOverModal";
+import { ScoreBoard } from "../components/ScoreBoard";
 import { useMemoryGame } from "../hooks/useMemoryGame";
+import { useTimer } from "../hooks/useTimer";
 import { FrogImage } from "../types";
-
-const Card = ({
-  url,
-  onClick,
-  isShown,
-}: {
-  url: string;
-  onClick: any;
-  isShown: boolean;
-}) => {
-  const [effect, setEffect] = useState(false);
-
-  return (
-    <img
-      css={[
-        tw`hover:border-black border-4 border-solid select-none cursor-pointer`,
-      ]}
-      className={`${effect && "animate-wiggle"}`}
-      style={{ width: "130px" }}
-      src={!isShown ? ygoback : url}
-      onClick={() => {
-        // setIsShown(!isShown);
-        setEffect(true);
-        onClick();
-      }}
-      onAnimationEnd={() => setEffect(false)}
-    />
-  );
-};
-
-const Flex = ({ children }: { children: ReactNode }) => {
-  return (
-    <div
-      tw={
-        "grid grid-rows-4 grid-flow-col text-center justify-center items-center mt-4"
-      }
-    >
-      {children}
-    </div>
-  );
-};
 
 const MemoryGame = ({
   images,
@@ -59,22 +16,42 @@ const MemoryGame = ({
   images: Array<FrogImage>;
   setImages: Dispatch<SetStateAction<Array<FrogImage>>>;
 }) => {
-  const { cards, addCard, checkTuple } = useMemoryGame({ setImages, images });
+  const [isRunning, setIsRunning] = useState(false);
+  const [elapsedTime, resetTimer] = useTimer(isRunning);
+  const { addCard, score, gameOver, resetGame } = useMemoryGame({
+    setImages,
+    images,
+  });
 
   useEffect(() => {
-    console.log({ images });
-  }, [JSON.stringify(images)]);
+    if (gameOver) {
+      setIsRunning(false);
+      resetTimer();
+    }
+  }, [gameOver, resetTimer]);
 
   return (
-    <Flex>
-      {images.map(({ url, id, isShown, found }: FrogImage) => (
-        <Card
-          url={url}
-          onClick={() => addCard({ url, id, found, isShown } as FrogImage)}
-          isShown={isShown}
-        />
-      ))}
-    </Flex>
+    <>
+      <GameOverModal isShown={gameOver} onClick={resetGame} />
+      <ScoreBoard score={score} />
+      <ElapsedTime elapsedTime={elapsedTime} />
+      <Flex>
+        {images.map(({ url, id, isShown, found }: FrogImage) => (
+          <Fragment key={id}>
+            <Card
+              url={url}
+              onClick={() => {
+                !isRunning && setIsRunning(true);
+
+                addCard({ url, id, found, isShown } as FrogImage);
+              }}
+              isShown={isShown}
+              isFound={found}
+            />
+          </Fragment>
+        ))}
+      </Flex>
+    </>
   );
 };
 

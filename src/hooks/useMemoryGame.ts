@@ -1,5 +1,8 @@
-import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { FrogImage } from "../types";
+import { calculateScoreFromMoves } from "../utils";
+import { useDeepCompareEffect } from "./useDeepCompareEffect";
+import { useTimer } from "./useTimer";
 
 type FrogTuple = [FrogImage, FrogImage] | [FrogImage] | [];
 
@@ -12,15 +15,19 @@ export const useMemoryGame = ({
   images,
 }: {
   setImages: Dispatch<SetStateAction<Array<FrogImage>>>;
-  images: any[];
+  images: FrogImage[];
 }) => {
   const [cards, setCards] = useState<FrogTuple>([]);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [movesSinceLastMatch, setMovesSinceLastMatch] = useState(0);
+  const [isDeltaTimerRunning, setIsDeltaTimerRunning] = useState(false);
+  const [elapsedTime, resetTimer] = useTimer(isDeltaTimerRunning);
+  const deltaTime = elapsedTime;
 
-  useEffect(() => {
+  useDeepCompareEffect(() => {
     console.log({ cards });
-  }, [JSON.stringify(cards)]);
+  }, [cards]);
 
   const checkTuple = (cards: FrogTuple) => {
     if (
@@ -28,7 +35,18 @@ export const useMemoryGame = ({
       cards[1] &&
       convertId(cards[0].id) === convertId(cards[1].id)
     ) {
-      console.log("found a pair");
+      /**
+       * Found a pair:
+       * Increment score depending on the number of moves since last match and the time elapsed since last match
+       * Reset moves since last match
+       */
+      setScore(
+        (score) =>
+          score + calculateScoreFromMoves(movesSinceLastMatch, deltaTime)
+      );
+
+      resetTimer();
+      setMovesSinceLastMatch(0);
       setImages((images: Array<FrogImage>) => {
         return images.map((image: FrogImage) => {
           if (cards[0] && cards[1])
@@ -63,13 +81,7 @@ export const useMemoryGame = ({
     }, 500);
   };
 
-  const resetGame = () => {
-    setCards([]);
-    setScore(0);
-    setGameOver(false);
-  };
-
-  useEffect(() => {
+  useDeepCompareEffect(() => {
     let found = false;
 
     if (cards.length === 2) checkTuple(cards);
@@ -80,8 +92,6 @@ export const useMemoryGame = ({
             found = true;
             return cards[0];
           }
-          // if (cards[1] && convertId(image.id) === convertId(cards[1]!.id))
-          //   return cards[1];
           return image;
         });
 
@@ -92,8 +102,6 @@ export const useMemoryGame = ({
     if (cards.length === 2)
       setImages((prevImages: any) => {
         const res = prevImages.map((image: FrogImage) => {
-          // if (cards[0] && convertId(image.id) === convertId(cards[0]!.id))
-          //   return cards[0];
           if (!found && cards[1] && image.id === cards[1]!.id) {
             found = true;
             checkTuple(cards);
@@ -105,13 +113,9 @@ export const useMemoryGame = ({
       });
   }, [cards.length, JSON.stringify(cards)]);
 
-  useEffect(() => {
-    console.log(cards);
-  }, [JSON.stringify(cards)]);
-
-  useEffect(() => {
+  useDeepCompareEffect(() => {
     setGameOver(images.every((image) => image.found));
-  }, [JSON.stringify(images)]);
+  }, [images]);
 
   useEffect(() => {
     if (gameOver) console.log("asdasd");
@@ -123,29 +127,34 @@ export const useMemoryGame = ({
     if (cards.length < 2) {
       if (cards.length === 0) {
         setCards([{ ...card, isShown: true }]);
+        setMovesSinceLastMatch((moves) => moves + 1);
+        setIsDeltaTimerRunning(true);
+        console.log({ movesSinceLastMatch });
       } else if (cards.length === 1) {
         if (card.id === cards[0].id) return;
         setCards([...cards, { ...card, isShown: true }]);
+        setMovesSinceLastMatch((moves) => moves + 1);
+        setIsDeltaTimerRunning(true);
+        console.log({ movesSinceLastMatch });
       }
     }
   };
 
-  const updateScore = (score: number) => {
-    setScore(score);
-  };
-
-  const gameOverHandler = () => {
-    setGameOver(true);
+  const resetGame = () => {
+    setCards([]);
+    setScore(0);
+    setGameOver(false);
+    setImages((images: Array<FrogImage>) => {
+      return images.map((image: FrogImage) => {
+        return { ...image, found: false, isShown: false };
+      });
+    });
   };
 
   return {
-    cards,
     addCard,
-    checkTuple,
     score,
-    updateScore,
     gameOver,
-    gameOverHandler,
     resetGame,
   };
 };
