@@ -63,6 +63,7 @@ export const useMemoryGame = ({
       return true;
     }
 
+    // Switch cards back to hidden after opening two with a delay
     setTimeout(() => {
       setImages((images: Array<FrogImage>) => {
         return images.map((image: FrogImage) => {
@@ -86,7 +87,7 @@ export const useMemoryGame = ({
 
     if (cards.length === 2) checkTuple(cards);
     if (cards.length === 1)
-      setImages((prevImages: any) => {
+      setImages((prevImages) => {
         const res = prevImages.map((image: FrogImage) => {
           if (!found && cards[0] && image.id === cards[0]!.id) {
             found = true;
@@ -117,10 +118,6 @@ export const useMemoryGame = ({
     setGameOver(images.every((image) => image.found));
   }, [images]);
 
-  useEffect(() => {
-    if (gameOver) console.log("asdasd");
-  }, [gameOver]);
-
   const addCard = (card: FrogImage) => {
     if (card.found) return;
 
@@ -129,13 +126,11 @@ export const useMemoryGame = ({
         setCards([{ ...card, isShown: true }]);
         setMovesSinceLastMatch((moves) => moves + 1);
         setIsDeltaTimerRunning(true);
-        console.log({ movesSinceLastMatch });
       } else if (cards.length === 1) {
         if (card.id === cards[0].id) return;
         setCards([...cards, { ...card, isShown: true }]);
         setMovesSinceLastMatch((moves) => moves + 1);
         setIsDeltaTimerRunning(true);
-        console.log({ movesSinceLastMatch });
       }
     }
   };
